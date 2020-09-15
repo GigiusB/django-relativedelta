@@ -1,11 +1,15 @@
+import os
+
+import pytest
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from relativedeltafield import RelativeDeltaField
-from .testapp.models import Interval
+from demoproject.testapp.models import Interval
+from relativedeltafield import RelativeDeltaField, iso8601relativedelta
 
-from datetime import timedelta
+from datetime import timedelta, datetime
 from dateutil.relativedelta import relativedelta
+
 
 class RelativeDeltaFieldTest(TestCase):
 	def setUp(self):
@@ -22,7 +26,11 @@ class RelativeDeltaFieldTest(TestCase):
 		obj.save()
 
 		obj.refresh_from_db()
-		self.assertStrictEqual(input_value, obj.value)
+		self.assertEqual(input_value, obj.value)
+		self.assertIsInstance(obj.value, relativedelta)
+		self.assertStrictEqual(obj.value,
+							   iso8601relativedelta(years=2, months=3, days=4, hours=5, minutes=52, seconds=30,
+													microseconds=5))
 
 
 	def test_empty_value_survives_db_roundtrip(self):
@@ -30,7 +38,10 @@ class RelativeDeltaFieldTest(TestCase):
 		obj.save()
 
 		obj.refresh_from_db()
-		self.assertStrictEqual(relativedelta(), obj.value)
+		self.assertEqual(relativedelta(), obj.value)
+		self.assertStrictEqual(iso8601relativedelta(), obj.value)
+		self.assertIsInstance(obj.value, relativedelta)
+
 
 
 	def test_each_separate_value_survives_db_roundtrip(self):
@@ -94,7 +105,10 @@ class RelativeDeltaFieldTest(TestCase):
 		obj.full_clean()
 
 		self.assertNotEqual(input_value, obj.value)
-		self.assertStrictEqual(input_value.normalized(), obj.value)
+		inorm=input_value.normalized()
+		expected = iso8601relativedelta(years=1, months=3, days=11, hours=18, minutes=11, seconds=50,
+													microseconds=100010)
+		self.assertEqual(obj.value, expected)
 
 		# Quick sanity check to ensure the input isn't mutated.
 		# Take into account that weeks are added to days though!
@@ -122,7 +136,10 @@ class RelativeDeltaFieldTest(TestCase):
 		obj.full_clean()
 
 		self.assertNotEqual(input_value, obj.value)
-		self.assertStrictEqual(input_value.normalized(), obj.value)
+		inorm=input_value.normalized()
+		expected = iso8601relativedelta(years=1, months=3, days=18, hours=18, minutes=11, seconds=50,
+													microseconds=100010)
+		self.assertEqual(obj.value, expected)
 
 		# Quick sanity check to ensure the input isn't mutated.
 		# Take into account that weeks are added to days though!
@@ -155,15 +172,13 @@ class RelativeDeltaFieldTest(TestCase):
 	def test_invalid_string_inputs_raise_validation_error(self):
 		obj = Interval()
 
-		obj.value = 'blabla'
-		with self.assertRaises(ValidationError) as cm:
-			obj.full_clean()
-		self.assertEqual(set(['value']), set(cm.exception.message_dict.keys()))
+		with self.assertRaises(ValueError) as cm:
+			obj.value = 'blabla'
+		self.assertEqual(cm.exception.args[0], 'Not a valid (extended) ISO8601 interval specification')
 
-		obj.value = 'P1.5M' # not allowed by relativedelta because it is supposedly ambiguous
-		with self.assertRaises(ValidationError) as cm:
-			obj.full_clean()
-		self.assertEqual(set(['value']), set(cm.exception.message_dict.keys()))
+		with self.assertRaises(ValueError) as cm:
+			obj.value = 'P1.5M' # not allowed by relativedelta because it is supposedly ambiguous
+		self.assertEqual(cm.exception.args[0], 'Not a valid (extended) ISO8601 interval specification')
 
 		obj.value = 'P1M' # Check that the error is cleared when made valid again
 		obj.full_clean()
@@ -172,15 +187,13 @@ class RelativeDeltaFieldTest(TestCase):
 	def test_invalid_objects_raise_validation_errors(self):
 		obj = Interval()
 
-		obj.value = True
-		with self.assertRaises(ValidationError) as cm:
-			obj.full_clean()
-		self.assertEqual(set(['value']), set(cm.exception.message_dict.keys()))
+		with self.assertRaises(ValueError) as cm:
+			obj.value = True
+		self.assertEqual(cm.exception.args[0], 'Not a valid (extended) ISO8601 interval specification')
 
-		obj.value = 1
-		with self.assertRaises(ValidationError) as cm:
-			obj.full_clean()
-		self.assertEqual(set(['value']), set(cm.exception.message_dict.keys()))
+		with self.assertRaises(ValueError) as cm:
+			obj.value = 1
+		self.assertEqual(cm.exception.args[0], 'Not a valid (extended) ISO8601 interval specification')
 
 		obj.value = 'P1M' # Check that the error is cleared when made valid again
 		obj.full_clean()
@@ -218,3 +231,29 @@ class RelativeDeltaFieldTest(TestCase):
 
 		q = Interval.objects.filter(value__lt='P2Y')
 		self.assertEqual(2, q.count())
+
+		obj2 = Interval(value='P100D')
+		obj2.save()
+
+
+	# TODO: figure out a way to make it work on non postgres DB
+	@pytest.mark.skipif(os.environ.get('DBENGINE', '') != '', reason="Known to fail on non postgres db")
+	def test_filterning_non_postgres(self):
+		obj1 = Interval(value='P1Y3M1W4.5DT5H70.5M80.10001S')
+		obj1.save()
+
+		obj2 = Interval(value='P12D')
+		obj2.save()
+
+		# This will fail for non postgres DB
+		q = Interval.objects.filter(value__gt='P99D')
+		self.assertEqual(1, q.count())
+
+		q = Interval.objects.filter(value__gt='P9D')
+		self.assertEqual(2, q.count())
+
+
+	def test_value_usable_as_timedelta(self):
+		obj1 = Interval(value='P1Y2M3W4DT5H6M7S')
+		sum = datetime(2019, 1, 4, 10, 11, 12, 500) + obj1.value
+		self.assertEqual(sum, datetime(2020, 3, 29, 15, 17, 19, 500))
