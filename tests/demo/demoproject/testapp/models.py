@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
 import logging
-import six
 
-from django.core.mail.backends.base import BaseEmailBackend
 from django.db import models
-
 from relativedeltafield import RelativeDeltaField
 
 logger = logging.getLogger(__name__)
-
-
 
 
 # class DemoAllModel(models.Model):
@@ -28,4 +23,4 @@ class DemoModel(models.Model):
 
 
 class Interval(models.Model):
-	value=RelativeDeltaField(null=True, blank=True)
+    value = RelativeDeltaField(null=True, blank=True)

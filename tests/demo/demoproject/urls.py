@@ -1,7 +1,6 @@
 from django.conf.urls import url
 from django.contrib.admin import AdminSite, autodiscover
 
-
 from .testapp.models import DemoModel
 
 autodiscover()
