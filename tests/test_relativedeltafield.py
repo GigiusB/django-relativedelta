@@ -2,10 +2,10 @@ from datetime import datetime, timedelta
 
 from dateutil.relativedelta import relativedelta
 from django.test import TestCase
-from relativedeltafield import RelativeDeltaField
-from relativedeltafield.utils import iso8601relativedelta
 
 from demoproject.testapp.models import Interval
+from relativedeltafield import RelativeDeltaField
+from relativedeltafield.utils import iso8601relativedelta
 
 
 class RelativeDeltaFieldTest(TestCase):

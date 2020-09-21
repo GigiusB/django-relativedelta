@@ -1,5 +1,6 @@
 import re
 from datetime import timedelta
+from typing import Any
 
 from dateutil.relativedelta import relativedelta
 
@@ -20,43 +21,151 @@ iso8601_duration_re = re.compile(
     r'$'
 )
 
+iso8601_csv_re = re.compile(r"(?P<years>^[-\d]\d{5}),(?P<months>[-\d]\d{3}),(?P<days>[-\d]\d{3}),"
+                            r"(?P<hours>[-\d]\d{3}),(?P<minutes>[-\d]\d{3}),(?P<seconds>[-\d]\d{3}),"
+                            r"(?P<microseconds>[-\d]\d{6})$")
+
 
 # Parse ISO8601 timespec
 def parse_relativedelta(value):
     if value is None or value == '':
         return None
+    elif isinstance(value, iso8601relativedelta):
+        return value
     elif isinstance(value, (relativedelta, timedelta)):
-        return iso8601relativedelta(value)
-    try:
-        m = iso8601_duration_re.match(value)
-        if m:
-            args = {}
-            for k, v in m.groupdict().items():
-                if v is None:
-                    args[k] = 0
-                elif '.' in v:
-                    args[k] = float(v)
-                else:
-                    args[k] = int(v)
-            return iso8601relativedelta(**args).normalized() if m else None
-    except Exception:
-        pass
+        return iso8601relativedelta(value).normalized()
+    elif isinstance(value, str):
+        try:
+            m = iso8601_duration_re.match(value)
+            if m:
+                args = {}
+                for k, v in m.groupdict().items():
+                    if v is None:
+                        args[k] = 0
+                    elif '.' in v:
+                        args[k] = float(v)
+                    else:
+                        args[k] = int(v)
+                return iso8601relativedelta(**args).normalized() if m else None
+            else:
+                m = iso8601_csv_re.match(value)
+                if m:
+                    return iso8601relativedelta(value)
+        except Exception:
+                    pass
     raise ValueError('Not a valid (extended) ISO8601 interval specification')
 
 
 class iso8601relativedelta(relativedelta):
-    def __init__(self, *args, **kwargs) -> None:
-        if len(args) == 1 and isinstance(args[0], (relativedelta, timedelta)):
-            rd = args[0]
-            self.years = getattr(rd, 'years', 0)
-            self.months = getattr(rd, 'months', 0)
-            self.days = rd.days
-            self.hours = getattr(rd, 'hours', int(args[0].seconds / 3600))
-            self.minutes = getattr(rd, 'minutes', 0)
-            self.seconds = rd.seconds if isinstance(rd, relativedelta) else int(args[0].seconds % 3600)
-            self.microseconds = rd.microseconds
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        self.__dict__[name] = value
+
+    def __getattribut__(self, name: str) -> Any:
+        return self.__dict__[name]
+
+
+    # def __init3__(self, dt1=None, dt2=None, years=0, months=0, days=0, leapdays=0, weeks=0, hours=0, minutes=0,
+    #              seconds=0, microseconds=0, year=None, month=None, day=None, weekday=None, yearday=None, nlyearday=None,
+    #              hour=None, minute=None, second=None, microsecond=None):
+    #     self.years = 0
+    #     self.months = 0
+    #     self.days = 0
+    #     self.weeks = 0
+    #     self.leapdays = 0
+    #     self.hours = 0
+    #     self.minutes = 0
+    #     self.seconds = 0
+    #     self.microseconds = 0
+    #     m = None
+    #     if isinstance(dt1, iso8601relativedelta):
+    #         self.years = dt1.years
+    #         self.months = dt1.months
+    #         self.days = dt1.days
+    #         self.weeks = dt1.weeks
+    #         self.leapdays = dt1.leapdays
+    #         self.hours = dt1.hours
+    #         self.minutes = dt1.minutes
+    #         self.seconds = dt1.seconds
+    #         self.microseconds = dt1.microseconds
+    #     if isinstance(dt1, str):  # could either be iso8601 standard format or csv format
+    #         m = iso8601_duration_re.match(dt1)
+    #         if not m:
+    #             m = iso8601_csv_re.match(dt1)
+    #         if m:
+    #             m = {k: int(v) for k, v in m.groupdict().items()}
+    #             super().__init__(**m)
+    #     else:
+    #         super().__init__(dt1, dt2, years, months, days, leapdays, weeks, hours, minutes, seconds, microseconds,
+    #                          year, month, day, weekday, yearday, nlyearday, hour, minute, second, microsecond)
+
+
+
+    def __init__(self, dt1=None, *args, **kwargs) -> None:
+        self.years = 0
+        self.months = 0
+        self.days = 0
+        self.leapdays = 0
+        self.hours = 0
+        self.minutes = 0
+        self.seconds = 0
+        self.microseconds = 0
+        self.year = None
+        self.month = None
+        self.day = None
+        self.weekday = None
+        self.hour = None
+        self.minute = None
+        self.second = None
+        self.microsecond = None
+        self._has_time = 0
+
+        # self.years = 0
+        # self.months = 0
+        # self.days = 0
+        # self.weeks = 0
+        # self.leapdays = 0
+        # self.hours = 0
+        # self.minutes = 0
+        # self.seconds = 0
+        # self.microseconds = 0
+        if dt1 is not None and (len(args) == len(kwargs) == 0):
+            if isinstance(dt1, str):  # could either be iso8601 standard format or csv format
+                m = iso8601_duration_re.match(dt1)
+                if not m:
+                    m = iso8601_csv_re.match(dt1)
+                if m:
+                    d = dict(m.groupdict())
+                    seconds = d.get('seconds', None)
+                    if seconds and '.' in seconds:
+                        seconds, microseconds = seconds.split('.')
+                        microseconds = microseconds.ljust(6, '0')
+                        d.update({
+                            'seconds': seconds,
+                            'microseconds': str(int(d.get('microseconds', 0)) + int(microseconds))
+                        })
+                    m = {k: int(v) if v is not None else 0 for k, v in d.items()}
+                    super().__init__(**m)
+            elif isinstance(dt1, relativedelta):
+                self.years = dt1.years
+                self.months = dt1.months
+                self.days = dt1.days
+                self.weeks = dt1.weeks
+                self.leapdays = dt1.leapdays
+                self.hours = dt1.hours
+                self.minutes = dt1.minutes
+                self.seconds = dt1.seconds
+                self.microseconds = dt1.microseconds
+            elif isinstance(dt1, timedelta):
+                self.years = 0
+                self.months = 0
+                self.days = getattr(dt1, 'days', 0)
+                self.hours = getattr(dt1, 'hours', 0)
+                self.minutes = getattr(dt1, 'minutes', 0)
+                self.seconds = getattr(dt1, 'seconds', 0)
+                self.microseconds = getattr(dt1, 'microseconds', 0) + getattr(dt1, 'milliseconds', 0) * 1000
         else:
-            super().__init__(*args, **kwargs)
+            super().__init__(dt1, *args, **kwargs)
 
     # 	#self.db_vendor = db_vendor
 
@@ -68,6 +177,18 @@ class iso8601relativedelta(relativedelta):
                              minutes=self.minutes,
                              seconds=self.seconds,
                              microseconds=self.microseconds)
+
+    @property
+    def as_csv(self) -> int:
+        return '%06d,%04d,%04d,%04d,%04d,%04d,%07d' % (
+                self.years,
+                self.months,
+                self.days,
+                self.hours,
+                self.minutes,
+                self.seconds,
+                self.microseconds
+        )
 
     def __str__(self) -> str:
         return format_relativedelta(self)

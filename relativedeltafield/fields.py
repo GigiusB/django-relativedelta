@@ -1,27 +1,47 @@
 from datetime import timedelta
 
 from dateutil.relativedelta import relativedelta
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
-from relativedeltafield.utils import format_relativedelta, parse_relativedelta
-from testproject.relativedeltafield.utils import iso8601relativedelta
+
+from relativedeltafield.utils import format_relativedelta, parse_relativedelta, iso8601relativedelta
 
 
 class RelativeDeltaDescriptor:
     def __init__(self, field) -> None:
         self.field = field
 
+
     def __get__(self, obj, objtype=None):
         if obj is None:
             return None
         value = obj.__dict__.get(self.field.name)
-        return parse_relativedelta(value)
+        if value is None:
+            return None
+        eng = settings.DATABASES[self.field.model.objects.db]['ENGINE']
+        if 'postgres' in eng:
+            return iso8601relativedelta(value)
+        else:
+            # TODO: rebuild here
+
+            return parse_relativedelta(iso8601relativedelta(value))
 
     # return RelativeDeltaProxy(iso=value)
 
     def __set__(self, obj, value):
-        obj.__dict__[self.field.name] = None if value is None else format_relativedelta(parse_relativedelta(value))
+        if value is None:
+            rd = None
+        else:
+            rd = parse_relativedelta(value)
+            eng = settings.DATABASES[self.field.model.objects.db]['ENGINE']
+            if 'postgres' in eng:
+                rd = format_relativedelta(rd)
+            else:
+                rd = rd.as_csv
+        obj.__dict__[self.field.name] = rd
+
 
 
 class RelativeDeltaField(models.Field):
@@ -37,17 +57,34 @@ class RelativeDeltaField(models.Field):
     description = _("RelativeDelta")
     descriptor_class = RelativeDeltaDescriptor
 
+    def contribute_to_class(self, cls, name, private_only=False):
+        super().contribute_to_class(cls, name, private_only)
+
+    def get_lookup(self, lookup_name):
+        ret = super().get_lookup(lookup_name)
+        return ret
+
     def db_type(self, connection):
         if connection.vendor == 'postgresql':
             return 'interval'
         else:
-            return 'varchar(27)'
+            return 'varchar(40)'
+
+    def get_db_prep_save(self, value, connection):
+        if value is None:
+            return None
+        if connection.vendor == 'postgresql':
+            return super().get_db_prep_save(value, connection)
+        else:
+            return value.as_csv
+
+
 
     def to_python(self, value):
         if value is None:
             return value
         elif isinstance(value, relativedelta):
-            return value.normalized()
+            return iso8601relativedelta(value.normalized())
         elif isinstance(value, timedelta):
             return (iso8601relativedelta() + value).normalized()
 
@@ -64,9 +101,13 @@ class RelativeDeltaField(models.Field):
         if value is None:
             return value
         else:
-            return format_relativedelta(self.to_python(value))
+            eng = settings.DATABASES[self.model._meta.default_manager.db]['ENGINE']
+            if 'postgres' in eng:
+                return format_relativedelta(self.to_python(value))
+            else:
+                return self.to_python(value).as_csv
 
-    # This is a bit of a mindfuck.  We have to cast the output field
+                # This is a bit of a mindfuck.  We have to cast the output field
     # as text to bypass the standard deserialisation of PsycoPg2 to
     # datetime.timedelta, which loses information.  We then parse it
     # ourselves in convert_relativedeltafield_value().

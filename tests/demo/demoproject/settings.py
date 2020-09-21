@@ -25,6 +25,7 @@ if db == 'sqlite':
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': 'relativedelta-test',
+
         }}
 elif db == 'mysql':
     DATABASES = {
@@ -33,8 +34,17 @@ elif db == 'mysql':
             'NAME': 'relativedelta-test',
             'HOST': os.environ.get('MYSQL_HOST', '127.0.0.1'),
             'PORT': os.environ.get('MYSQL_PORT', 3306),
-            'USER': os.environ.get('MYSQL_USER', 'root'),
+            'USER': os.environ.get('MYSQL_USER', 'reldelta'),
             'PASSWORD': os.environ.get('MYSQL_PASSWORD', ''),
+            'OPTIONS': {
+                'isolation_level': 'read uncommitted'
+            },
+            'TEST': {
+                'NAME': 'prova',
+                'OPTIONS': {
+                    'isolation_level': 'read uncommitted'
+                },
+            },
             'CHARSET': 'utf8',
             'COLLATION': 'utf8_general_ci'}}
 else:

@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from relativedeltafield.utils import parse_relativedelta
-from testproject.relativedeltafield.utils import format_relativedelta
+
+from relativedeltafield.utils import parse_relativedelta, format_relativedelta
 
 
 class RelativeDeltaFormField(forms.CharField):

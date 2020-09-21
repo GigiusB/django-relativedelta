@@ -2,6 +2,7 @@
 import logging
 
 from django.db import models
+
 from relativedeltafield import RelativeDeltaField
 
 logger = logging.getLogger(__name__)
