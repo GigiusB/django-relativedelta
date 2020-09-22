@@ -13,7 +13,6 @@ class RelativeDeltaDescriptor:
     def __init__(self, field) -> None:
         self.field = field
 
-
     def __get__(self, obj, objtype=None):
         if obj is None:
             return None
@@ -28,8 +27,6 @@ class RelativeDeltaDescriptor:
 
             return parse_relativedelta(iso8601relativedelta(value))
 
-    # return RelativeDeltaProxy(iso=value)
-
     def __set__(self, obj, value):
         if value is None:
             rd = None
@@ -41,7 +38,6 @@ class RelativeDeltaDescriptor:
             else:
                 rd = rd.as_csv
         obj.__dict__[self.field.name] = rd
-
 
 
 class RelativeDeltaField(models.Field):
@@ -56,9 +52,6 @@ class RelativeDeltaField(models.Field):
     }
     description = _("RelativeDelta")
     descriptor_class = RelativeDeltaDescriptor
-
-    def contribute_to_class(self, cls, name, private_only=False):
-        super().contribute_to_class(cls, name, private_only)
 
     def get_lookup(self, lookup_name):
         ret = super().get_lookup(lookup_name)
@@ -77,8 +70,6 @@ class RelativeDeltaField(models.Field):
             return super().get_db_prep_save(value, connection)
         else:
             return value.as_csv
-
-
 
     def to_python(self, value):
         if value is None:
@@ -107,7 +98,7 @@ class RelativeDeltaField(models.Field):
             else:
                 return self.to_python(value).as_csv
 
-                # This is a bit of a mindfuck.  We have to cast the output field
+    # This is a bit of a mindfuck.  We have to cast the output field
     # as text to bypass the standard deserialisation of PsycoPg2 to
     # datetime.timedelta, which loses information.  We then parse it
     # ourselves in convert_relativedeltafield_value().

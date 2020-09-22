@@ -21,6 +21,7 @@ iso8601_duration_re = re.compile(
     r'$'
 )
 
+# This is the comma-separated internal value to be used for databases non supporting the interval type natively
 iso8601_csv_re = re.compile(r"(?P<years>^[-\d]\d{5}),(?P<months>[-\d]\d{3}),(?P<days>[-\d]\d{3}),"
                             r"(?P<hours>[-\d]\d{3}),(?P<minutes>[-\d]\d{3}),(?P<seconds>[-\d]\d{3}),"
                             r"(?P<microseconds>[-\d]\d{6})$")
@@ -52,7 +53,7 @@ def parse_relativedelta(value):
                 if m:
                     return iso8601relativedelta(value)
         except Exception:
-                    pass
+            pass
     raise ValueError('Not a valid (extended) ISO8601 interval specification')
 
 
@@ -63,43 +64,6 @@ class iso8601relativedelta(relativedelta):
 
     def __getattribut__(self, name: str) -> Any:
         return self.__dict__[name]
-
-
-    # def __init3__(self, dt1=None, dt2=None, years=0, months=0, days=0, leapdays=0, weeks=0, hours=0, minutes=0,
-    #              seconds=0, microseconds=0, year=None, month=None, day=None, weekday=None, yearday=None, nlyearday=None,
-    #              hour=None, minute=None, second=None, microsecond=None):
-    #     self.years = 0
-    #     self.months = 0
-    #     self.days = 0
-    #     self.weeks = 0
-    #     self.leapdays = 0
-    #     self.hours = 0
-    #     self.minutes = 0
-    #     self.seconds = 0
-    #     self.microseconds = 0
-    #     m = None
-    #     if isinstance(dt1, iso8601relativedelta):
-    #         self.years = dt1.years
-    #         self.months = dt1.months
-    #         self.days = dt1.days
-    #         self.weeks = dt1.weeks
-    #         self.leapdays = dt1.leapdays
-    #         self.hours = dt1.hours
-    #         self.minutes = dt1.minutes
-    #         self.seconds = dt1.seconds
-    #         self.microseconds = dt1.microseconds
-    #     if isinstance(dt1, str):  # could either be iso8601 standard format or csv format
-    #         m = iso8601_duration_re.match(dt1)
-    #         if not m:
-    #             m = iso8601_csv_re.match(dt1)
-    #         if m:
-    #             m = {k: int(v) for k, v in m.groupdict().items()}
-    #             super().__init__(**m)
-    #     else:
-    #         super().__init__(dt1, dt2, years, months, days, leapdays, weeks, hours, minutes, seconds, microseconds,
-    #                          year, month, day, weekday, yearday, nlyearday, hour, minute, second, microsecond)
-
-
 
     def __init__(self, dt1=None, *args, **kwargs) -> None:
         self.years = 0
@@ -120,15 +84,6 @@ class iso8601relativedelta(relativedelta):
         self.microsecond = None
         self._has_time = 0
 
-        # self.years = 0
-        # self.months = 0
-        # self.days = 0
-        # self.weeks = 0
-        # self.leapdays = 0
-        # self.hours = 0
-        # self.minutes = 0
-        # self.seconds = 0
-        # self.microseconds = 0
         if dt1 is not None and (len(args) == len(kwargs) == 0):
             if isinstance(dt1, str):  # could either be iso8601 standard format or csv format
                 m = iso8601_duration_re.match(dt1)
@@ -167,8 +122,6 @@ class iso8601relativedelta(relativedelta):
         else:
             super().__init__(dt1, *args, **kwargs)
 
-    # 	#self.db_vendor = db_vendor
-
     @property
     def rd(self) -> relativedelta:
         return relativedelta(years=self.years, months=self.months,
@@ -179,15 +132,15 @@ class iso8601relativedelta(relativedelta):
                              microseconds=self.microseconds)
 
     @property
-    def as_csv(self) -> int:
+    def as_csv(self) -> str:
         return '%06d,%04d,%04d,%04d,%04d,%04d,%07d' % (
-                self.years,
-                self.months,
-                self.days,
-                self.hours,
-                self.minutes,
-                self.seconds,
-                self.microseconds
+            self.years,
+            self.months,
+            self.days,
+            self.hours,
+            self.minutes,
+            self.seconds,
+            self.microseconds
         )
 
     def __str__(self) -> str:
