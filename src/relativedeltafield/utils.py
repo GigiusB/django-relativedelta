@@ -101,6 +101,8 @@ class iso8601relativedelta(relativedelta):
                         })
                     m = {k: int(v) if v is not None else 0 for k, v in d.items()}
                     super().__init__(**m)
+                else:
+                    raise ValueError("Invalid iso8601 format")
             elif isinstance(dt1, relativedelta):
                 self.years = dt1.years
                 self.months = dt1.months
