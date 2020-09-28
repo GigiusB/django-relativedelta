@@ -143,6 +143,18 @@ class iso8601relativedelta(relativedelta):
             self.microseconds
         )
 
+    def __lt__(self, other) -> bool:
+        return self.as_csv < other.as_csv
+
+    def __le__(self, other) -> bool:
+        return self.as_csv <= other.as_csv
+
+    def __gt__(self, other) -> bool:
+        return self.as_csv > other.as_csv
+
+    def __ge__(self, other) -> bool:
+        return self.as_csv >= other.as_csv
+
     def __str__(self) -> str:
         return format_relativedelta(self)
 

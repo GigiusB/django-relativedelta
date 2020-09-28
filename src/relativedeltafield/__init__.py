@@ -1,4 +1,4 @@
-__version__ = "1.1.2"
+__version__ = "__version__ = '1.1.3'"
 
 from django.contrib.admin.options import FORMFIELD_FOR_DBFIELD_DEFAULTS
 

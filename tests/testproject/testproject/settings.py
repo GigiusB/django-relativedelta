@@ -1,4 +1,4 @@
-# Django settings for demoproject project.
+# Django settings for testproject project.
 import os
 
 here = os.path.dirname(__file__)
@@ -78,10 +78,10 @@ MIDDLEWARE = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'demoproject.urls'
-WSGI_APPLICATION = 'demoproject.wsgi.application'
+ROOT_URLCONF = 'testproject.urls'
+WSGI_APPLICATION = 'testproject.wsgi.application'
 
-AUTHENTICATION_BACKENDS = ('demoproject.backends.AnyUserBackend',)
+AUTHENTICATION_BACKENDS = ('testproject.backends.AnyUserBackend',)
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -91,4 +91,4 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'demoproject.testapp.apps.DemoConfig')
+    'testproject.testapp.apps.DemoConfig')

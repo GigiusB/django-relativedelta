@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from django.test import TestCase
 
-from demoproject.testapp.models import Interval
+from testproject.testapp.models import Interval
 from relativedeltafield import RelativeDeltaField
 from relativedeltafield.utils import iso8601relativedelta
 

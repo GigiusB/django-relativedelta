@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
-import logging
-
 from django.db import models
 
 from relativedeltafield import RelativeDeltaField
-
-logger = logging.getLogger(__name__)
-
 
 # class DemoAllModel(models.Model):
 #     choice = StrategyClassField(registry=registry)
