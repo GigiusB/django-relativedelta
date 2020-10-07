@@ -14,7 +14,7 @@ def test_equality():
 def test_gt():
     assert iso8601relativedelta('P4W') >= iso8601relativedelta('P27D')
     assert iso8601relativedelta('P27D') < iso8601relativedelta('P4W')
-    assert iso8601relativedelta('T1M') >= iso8601relativedelta('P-1MT5M')
+    assert iso8601relativedelta('PT1M') >= iso8601relativedelta('P-1MT5M')
 
 
 def test_valid_iso8601():
