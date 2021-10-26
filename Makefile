@@ -1,4 +1,4 @@
-.PHONY: help buil
+.PHONY: help build
 .DEFAULT_GOAL := help
 
 

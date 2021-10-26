@@ -4,12 +4,12 @@ import os
 from setuptools import find_packages, setup
 
 test_deps = [
-    'psycopg2-binary >= 2.8.0',
+    'psycopg2-binary < 2.9',
     'pytest >= 6.0.2',
     'pytest-pythonpath>=0.7.3',
     'pytest-echo>=1.7.1',
     'pytest-coverage',
-    'pytest-django >= ^3.7.0',
+    'pytest-django >= 3.7.0',
     'tox >= 3.14.3',
     'tox-pyenv >= 1.1.0',
     'bump2version >= 1.0.0',
@@ -43,6 +43,8 @@ setup(
         'Framework :: Django :: 2.1',
         'Framework :: Django :: 2.2',
         'Framework :: Django :: 3.0',
+        'Framework :: Django :: 3.1',
+        'Framework :: Django :: 3.2',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
@@ -53,6 +55,8 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Database',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
